@@ -6,7 +6,7 @@ from django.core.validators import validate_email
 from rest_framework_simplejwt.tokens import RefreshToken
 
 AUTH_PROVIDERS = {'email': 'email', 'google': 'google',
-                  'github': 'github', 'linkedin': 'linkedin'}
+                  'github': 'github'}
 
 class CustomManager(BaseUserManager):
     def email_validator(self, email):
