@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'social_authapi',
 ]
 
+AUTH_USER_MODEL = 'authapi.CustomUser'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
