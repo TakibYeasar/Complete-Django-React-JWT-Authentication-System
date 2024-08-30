@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .helpers import Google, register_social_user
-from .github import Github
+from .utils import Google, register_social_user, Github
 from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -32,18 +31,23 @@ class GoogleSignInSerializer(serializers.Serializer):
 class GithubLoginSerializer(serializers.Serializer):
     code = serializers.CharField()
 
-    def validate_code(self, code):   
+    def validate_code(self, code):
         access_token = Github.exchange_code_for_token(code)
-
         if access_token:
-            user_data=Github.get_github_user(access_token)
+            user_data = Github.get_github_user(access_token)
+            full_name = user_data['name']
+            email = user_data['email']
 
-            full_name=user_data['name']
-            email=user_data['email']
-            names=full_name.split(" ")
-            firstName=names[1]
-            lastName=names[0]
-            provider='github'
-            return register_social_user(provider, email, firstName, lastName)
+            if not email:
+                raise serializers.ValidationError(
+                    "Email not provided by GitHub. Please provide an email in your GitHub profile.")
+
+            names = full_name.split(" ")
+            first_name = names[0]
+            last_name = names[-1]
+
+            # Register or log in the user
+            provider = 'github'
+            return register_social_user(provider, email, first_name, last_name)
 
         

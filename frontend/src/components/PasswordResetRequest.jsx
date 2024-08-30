@@ -21,7 +21,6 @@ const PasswordResetRequest = () => {
 
     }
 
-  
   return (
     <div>
         <h2>Enter your registered email</h2>

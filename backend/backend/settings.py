@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import secrets
 from datetime import timedelta
 from pathlib import Path
 import os
@@ -181,9 +182,15 @@ SITE_NAME = 'Ultimate Django RF Authentication'
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+
+# Generate a secure random password with a mix of letters, numbers, and special characters
+SOCIAL_AUTH_PASSWORD = ''.join(secrets.choice(
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+'
+) for i in range(32))
+
 GITHUB_SECRET = os.environ.get("GITHUB_SECRET")
 GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID")
-SOCIAL_AUTH_PASSWORD = os.environ.get("SOCIAL_AUTH_PASSWORD")
 
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

@@ -15,75 +15,6 @@ const Login = () => {
     setLogindata({ ...logindata, [e.target.name]: e.target.value });
   };
 
-  const handleLoginWithGoogle = (response) => {
-    console.log('id_token', response.credential);
-  };
-
-  const handleLoginWithGithub = () => {
-    window.location.assign(
-      `https://github.com/login/oauth/authorize/?client_id=${import.meta.env.VITE_GITHUB_CLIENT_ID}`
-    );
-  };
-
-  const send_github__code_to_server = async () => {
-    if (searchparams) {
-      try {
-        const urlparam = searchparams.get('code');
-        const resp = await AxiosInstance.post('auth/github/', { code: urlparam });
-        const result = resp.data;
-        console.log('server res: ', result);
-        if (resp.status === 200) {
-          const user = {
-            email: result.email,
-            names: result.full_name,
-          };
-          localStorage.setItem('token', JSON.stringify(result.access_token));
-          localStorage.setItem('refresh_token', JSON.stringify(result.refresh_token));
-          localStorage.setItem('user', JSON.stringify(user));
-          navigate('/dashboard');
-          toast.success('login successful');
-        }
-      } catch (error) {
-        if (error.response) {
-          console.log(error.response.data);
-          toast.error(error.response.data.detail);
-        }
-      }
-    }
-  };
-
-  let code = searchparams.get('code');
-  useEffect(() => {
-    if (code) {
-      send_github__code_to_server();
-    }
-  }, [code]);
-
-  useEffect(() => {
-    const loadGoogleScript = () => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        /* global google */
-        google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleLoginWithGoogle,
-        });
-        google.accounts.id.renderButton(document.getElementById('signInDiv'), {
-          theme: 'outline',
-          size: 'large',
-          text: 'continue_with',
-          shape: 'circle',
-          width: '280',
-        });
-      };
-      document.body.appendChild(script);
-    };
-
-    loadGoogleScript();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,6 +37,76 @@ const Login = () => {
       }
     }
   };
+
+  const handleLoginWithGithub = () => {
+    window.location.assign(
+      `https://github.com/login/oauth/authorize/?client_id=${import.meta.env.VITE_GITHUB_CLIENT_ID}`
+    );
+  };
+
+  useEffect(() => {
+    const code = searchparams.get('code');
+
+    if (code) {
+      const sendGithubCodeToServer = async () => {
+        try {
+          const resp = await AxiosInstance.post('auth/github/', { code });
+          const result = resp.data;
+          console.log('server res: ', result);
+
+          if (resp.status === 200) {
+            const user = {
+              email: result.email,
+              names: result.full_name,
+            };
+            localStorage.setItem('access', JSON.stringify(result.access_token));
+            localStorage.setItem('refresh', JSON.stringify(result.refresh_token));
+            localStorage.setItem('user', JSON.stringify(user));
+            navigate('/dashboard');
+            toast.success('Login successful');
+          }
+        } catch (error) {
+          if (error.response) {
+            console.log(error.response.data);
+            toast.error(error.response.data.detail);
+          }
+        }
+      };
+
+      sendGithubCodeToServer();
+    }
+  }, [searchparams]);
+
+
+
+  const handleLoginWithGoogle = (response) => {
+    console.log('id_token', response.credential);
+  };
+
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: handleLoginWithGoogle,
+        });
+        google.accounts.id.renderButton(document.getElementById('signInDiv'), {
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'circle',
+          width: '280',
+        });
+      };
+      document.body.appendChild(script);
+    };
+
+    loadGoogleScript();
+  }, []);
 
   return (
     <div>
@@ -142,7 +143,7 @@ const Login = () => {
           </form>
           <h3 className='text-option'>Or</h3>
           <div className='githubContainer'>
-            <button onClick={handleLoginWithGithub}>Sign in with Github</button>
+            <button onClick={handleLoginWithGithub}>Log in with Github</button>
           </div>
           <div className='googleContainer'>
             <div id='signInDiv' className='gsignIn'></div>

@@ -7,21 +7,6 @@ from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 
 
-
-class Google():
-    @staticmethod
-    def validate(access_token):
-        try:
-            id_info=id_token.verify_oauth2_token(access_token, requests.Request())
-            if 'accounts.google.com' in id_info['iss']:
-                return id_info
-        except:
-            return "the token is either invalid or has expired"
-
-
-
-
-
 def register_social_user(provider, email, first_name, last_name):
     old_user = CustomUser.objects.filter(email=email)
     if old_user.exists():
@@ -57,3 +42,39 @@ def register_social_user(provider, email, first_name, last_name):
             "access_token":str(tokens.get('access')),
             "refresh_token":str(tokens.get('refresh'))
         }
+
+
+class Google():
+    @staticmethod
+    def validate(access_token):
+        try:
+            id_info = id_token.verify_oauth2_token(
+                access_token, requests.Request())
+            if 'accounts.google.com' in id_info['iss']:
+                return id_info
+        except:
+            return "the token is either invalid or has expired"
+
+class Github():
+    @staticmethod
+    def exchange_code_for_token(code):
+        params_payload = {"client_id": settings.GITHUB_CLIENT_ID,
+                          "client_secret": settings.GITHUB_SECRET, "code": code}
+        get_access_token = requests.post(
+            "https://github.com/login/oauth/access_token", params=params_payload, headers={'Accept': 'application/json'})
+        payload = get_access_token.json()
+        token = payload.get('access_token')
+        return token
+
+    @staticmethod
+    def get_github_user(access_token):
+        try:
+            headers = {'Authorization': f'Bearer {access_token}'}
+            resp = requests.get('https://api.github.com/user', headers=headers)
+            user_data = resp.json()
+            return user_data
+        except:
+            raise AuthenticationFailed("invalid access_token", 401)
+
+
+

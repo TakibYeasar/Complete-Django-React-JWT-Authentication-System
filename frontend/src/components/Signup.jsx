@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
+import AxiosInstance from '../utils/AxiosInstance';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchparams] = useSearchParams();
   const [formdata, setFormdata] = useState({
     email: '',
     username: '',
@@ -19,9 +21,61 @@ const Signup = () => {
     setFormdata({ ...formdata, [e.target.name]: e.target.value });
   };
 
+  const { email, username, first_name, last_name, password, confirm_password } = formdata;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const response = await AxiosInstance.post('auth/register/', formdata);
+    console.log(response.data);
+    const result = response.data;
+    if (response.status === 201) {
+      navigate('/otp/verify');
+      toast.success(result.message);
+    }
+  };
+
+  const handleSigninWithGithub = () => {
+    window.location.assign(
+      `https://github.com/login/oauth/authorize/?client_id=${import.meta.env.VITE_GITHUB_CLIENT_ID}`
+    );
+  };
+
+  useEffect(() => {
+    const code = searchparams.get('code');
+
+    if (code) {
+      const sendGithubCodeToServer = async () => {
+        try {
+          const resp = await AxiosInstance.post('auth/github/', { code });
+          const result = resp.data;
+          console.log('server res: ', result);
+
+          if (resp.status === 200) {
+            const user = {
+              email: result.email,
+              names: result.full_name,
+            };
+            localStorage.setItem('access', JSON.stringify(result.access_token));
+            localStorage.setItem('refresh', JSON.stringify(result.refresh_token));
+            localStorage.setItem('user', JSON.stringify(user));
+            navigate('/dashboard');
+            toast.success('Signin successful');
+          }
+        } catch (error) {
+          if (error.response) {
+            console.log(error.response.data);
+            toast.error(error.response.data.detail);
+          }
+        }
+      };
+
+      sendGithubCodeToServer();
+    }
+  }, [searchparams]);
+
   const handleSigninWithGoogle = async (response) => {
     const payload = response.credential;
-    const server_res = await axios.post('http://localhost:8000/api/social/auth/google/', { access_token: payload });
+    const server_res = await AxiosInstance.post('social/auth/google/', { access_token: payload });
     console.log(server_res.data);
   };
 
@@ -33,7 +87,7 @@ const Signup = () => {
       script.defer = true;
       script.onload = () => {
         google.accounts.id.initialize({
-          client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
           callback: handleSigninWithGoogle,
         });
         google.accounts.id.renderButton(document.getElementById('signInDiv'), {
@@ -50,24 +104,12 @@ const Signup = () => {
     loadGoogleScript();
   }, []);
 
-  const { email, username, first_name, last_name, password, confirm_password } = formdata;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const response = await axios.post('http://localhost:8000/api/auth/register/', formdata);
-    console.log(response.data);
-    const result = response.data;
-    if (response.status === 201) {
-      navigate('/otp/verify');
-      toast.success(result.message);
-    }
-  };
-
   return (
     <div>
       <div className='form-container'>
         <div style={{ width: '100%' }} className='wrapper'>
           <h2>Create Account</h2>
+
           <form onSubmit={handleSubmit}>
             <div className='form-group'>
               <label>Email Address:</label>
@@ -97,7 +139,7 @@ const Signup = () => {
           </form>
           <h3 className='text-option'>Or</h3>
           <div className='githubContainer'>
-            <button>Sign up with Github</button>
+            <button onClick={handleSigninWithGithub}>Sign in with Github</button>
           </div>
           <div className='googleContainer'>
             <div id='signInDiv' className='gsignIn'></div>

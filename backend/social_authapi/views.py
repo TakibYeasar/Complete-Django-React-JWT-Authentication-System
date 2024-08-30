@@ -11,7 +11,6 @@ class GoogleOauthSignInview(GenericAPIView):
     serializer_class = GoogleSignInSerializer
 
     def post(self, request):
-        print(request.data)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = ((serializer.validated_data)['access_token'])
